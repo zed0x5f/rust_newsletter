@@ -1,10 +1,18 @@
 use std::net::TcpListener;
 
-use actix_web::{get, post, web, App, HttpRequest, Responder};
+use sqlx::PgPool;
+use zero2prod::configuration::get_configuration;
+use zero2prod::startup::run;
 
 #[tokio::main]
 async fn main() -> Result<(), std::io::Error> {
-    let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to bind to random port");
-    println!("{:?}", &listener);
-    zero2prod::run(listener)?.await
+    //Panic if we can't read config
+    let config = get_configuration().expect("Failed to read configuration.");
+    let con_pool = PgPool::connect(&config.database.connection_string())
+        .await
+        .expect("Failed to connect to database");
+    let address = format!("127.0.0.1:{}", config.application_port);
+    let listener = TcpListener::bind(address)
+        .expect(format!("Failed to bind to port{}", config.application_port).as_str());
+    run(listener, con_pool)?.await
 }
