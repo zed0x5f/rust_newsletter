@@ -19,8 +19,6 @@ if ! [ -x "$(command -v sqlx)" ]; then
 fi
 
 
-
-
 DB_USER="${POSTGRES_USER:=postgres}"
 
 DB_PASSWORD="${POSTGRES_PASSWORD:=password}"
@@ -30,16 +28,27 @@ DB_NAME="${POSTGRES_DB:=newsletter}"
 DB_PORT="${POSTGRES_PORT:=5432}"
 
 DB_HOST="${POSTGRES_HOST:=localhost}"
+
+CONTAINER_NAME=newsletter
+
 # Allow to skip Docker if a dockerized Postgres data base is already running
 if [[ -z "${SKIP_DOCKER}" ]]
 then
-    docker run\
-        -e POSTGRES_USER=${DB_USER}\
-        -e POSTGRES_PASSWORD=${DB_PASSWORD}\
-        -e POSTGRES_DB=${DB_NAME}\
-        -p "${DB_PORT}":5432 \
-        -d postgres \
-        postgres -N 1000
+    if [[ $(docker ps -a --filter="name=${CONTAINER_NAME}" --filter "status=exited" | grep -w "${CONTAINER_NAME}") ]]; then
+        echo "docker start ... TODO!"
+    elif [[ $(docker ps -a --filter="name=${CONTAINER_NAME}" --filter "status=running" | grep -w "${CONTAINER_NAME}") ]]; then
+        echo "docker still running TODO!"
+    else
+        echo "docker run ..."
+        docker run\    
+            --name "${CONTAINER_NAME}"\
+            -e POSTGRES_USER=${DB_USER}\
+            -e POSTGRES_PASSWORD=${DB_PASSWORD}\
+            -e POSTGRES_DB=${DB_NAME}\
+            -p "${DB_PORT}":5432 \
+            -d postgres \
+            postgres -N 1000
+    fi
 fi
 
 #Keep pinging postgres until its ready
