@@ -1,3 +1,4 @@
+use secrecy::ExposeSecret;
 // use env_logger::Env;
 use sqlx::PgPool;
 use std::net::TcpListener;
@@ -19,7 +20,7 @@ async fn main() -> Result<(), std::io::Error> {
     let listener = TcpListener::bind(address)
         .expect(format!("Failed to bind to port{}", config.application_port).as_str());
 
-    let con_pool = PgPool::connect(&config.database.connection_string())
+    let con_pool = PgPool::connect(&config.database.connection_string().expose_secret())
         .await
         .expect("Failed to connect to database");
 

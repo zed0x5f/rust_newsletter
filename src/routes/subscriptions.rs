@@ -1,7 +1,6 @@
 use actix_web::{web, HttpResponse};
 use chrono::Utc;
 use sqlx::{types::chrono, PgPool};
-use tracing::Instrument;
 use uuid::Uuid;
 
 #[derive(serde::Deserialize, Debug)]
@@ -10,6 +9,8 @@ pub struct FormData {
     email: String,
 }
 
+//? Book states The error event does not fall within the query(http?) span and we have
+//? a better separation of concerns
 #[tracing::instrument(
         name="Adding a new subscriber",
         skip(form,pool),
@@ -20,8 +21,18 @@ pub struct FormData {
         )
 )]
 pub async fn subscribe(form: web::Form<FormData>, pool: web::Data<PgPool>) -> HttpResponse {
-    let query_span = tracing::info_span!("Saving new subscriber details in the database");
-    return match sqlx::query!(
+    match insert_subscriber(form, pool).await {
+        Ok(_) => HttpResponse::Ok().finish(),
+        Err(_e) => HttpResponse::InternalServerError().finish(),
+    }
+}
+
+//todo spanner
+pub async fn insert_subscriber(
+    form: web::Form<FormData>,
+    pool: web::Data<PgPool>,
+) -> Result<(), sqlx::Error> {
+    sqlx::query!(
         r#"
         INSERT INTO subscriptions 
                 (id,    email,  name, subscribed_at)
@@ -33,16 +44,13 @@ pub async fn subscribe(form: web::Form<FormData>, pool: web::Data<PgPool>) -> Ht
         Utc::now()
     )
     .execute(pool.as_ref())
-    .instrument(query_span)
     .await
-    {
-        //match arms
-        Ok(_) => HttpResponse::Ok().finish(),
-        Err(error) => {
-            // println!("Database Error -> {:?}", error);
-            //? this falls outside the query span book says we ill fix this
-            tracing::error!("Failed to execute db query -> {:?}", error);
-            HttpResponse::InternalServerError().finish()
-        }
-    };
+    .map_err(|e| {
+        tracing::error!("Failed to execute db query -> {:?}", e);
+        e
+        // Using the `?` operator to return early
+        // if the function failed, returning a sqlx::Error
+        // We will talk about error handling latter
+    })?;
+    Ok(())
 }
