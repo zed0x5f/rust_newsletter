@@ -16,12 +16,12 @@ async fn main() -> Result<(), std::io::Error> {
     //Panic if we can't read config
     let config = get_configuration().expect("Failed to read configuration.");
 
-    let address = format!("127.0.0.1:{}", config.application_port);
-    let listener = TcpListener::bind(address)
-        .expect(format!("Failed to bind to port{}", config.application_port).as_str());
+    let address = format!("{}:{}", config.application.host, config.application.port);
+    let listener = TcpListener::bind(address.clone())
+        .expect(format!("Failed to bind to address{}", address).as_str());
 
-    let con_pool = PgPool::connect(&config.database.connection_string().expose_secret())
-        .await
+    let con_pool = PgPool::connect_lazy(&config.database.connection_string().expose_secret())
+        // .await
         .expect("Failed to connect to database");
 
     run(listener, con_pool)?.await
