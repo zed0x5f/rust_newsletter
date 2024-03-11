@@ -15,7 +15,7 @@ pub struct FormData {
         name="Adding a new subscriber",
         skip(form,pool),
         fields(
-            request_id= %Uuid::new_v4(),
+            // request_id= %Uuid::new_v4(),
             subscriber_email = %form.email,
             subscriber_name = %form.name
         )
@@ -28,6 +28,10 @@ pub async fn subscribe(form: web::Form<FormData>, pool: web::Data<PgPool>) -> Ht
 }
 
 //todo spanner
+#[tracing::instrument(
+    name = "Saving new subscriber details in the database",
+    skip(form, pool)
+)]
 pub async fn insert_subscriber(
     form: web::Form<FormData>,
     pool: web::Data<PgPool>,
