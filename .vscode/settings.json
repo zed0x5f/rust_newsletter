@@ -1,3 +1,10 @@
 {
-  "cSpell.words": ["actix", "chrono", "HRTB", "sqlx", "urlencoder"]
+  "cSpell.words": [
+    "actix",
+    "chrono",
+    "HRTB",
+    "quickcheck",
+    "sqlx",
+    "urlencoder"
+  ]
 }
