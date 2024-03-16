@@ -3,12 +3,22 @@ use chrono::Utc;
 use sqlx::{types::chrono, PgPool};
 use uuid::Uuid;
 
-use crate::domain::{NewSubscriber, SubscribeEmail, SubscriberName};
+use crate::domain::{NewSubscriber, SubscriberEmail, SubscriberName};
 
 #[derive(serde::Deserialize, Debug)]
 pub struct FormData {
     name: String,
     email: String,
+}
+
+impl TryFrom<FormData> for NewSubscriber {
+    type Error = String;
+    fn try_from(form: FormData) -> Result<Self, Self::Error> {
+        Ok(NewSubscriber {
+            email: SubscriberEmail::parse(form.email)?,
+            name: SubscriberName::parse(form.name)?,
+        })
+    }
 }
 
 //? Book states The error event does not fall within the query(http?) span and we have
@@ -23,17 +33,10 @@ pub struct FormData {
         )
 )]
 pub async fn subscribe(form: web::Form<FormData>, pool: web::Data<PgPool>) -> HttpResponse {
-    let name = match SubscriberName::parse(form.0.name) {
-        Ok(name) => name,
+    let new_subscriber: NewSubscriber = match form.0.try_into() {
+        Ok(e) => e,
         Err(_) => return HttpResponse::BadRequest().finish(),
     };
-
-    let email = match SubscribeEmail::parse(form.0.email) {
-        Ok(email) => email,
-        Err(_) => return HttpResponse::BadRequest().finish(),
-    };
-
-    let new_subscriber = NewSubscriber { email, name };
 
     match insert_subscriber(pool, &new_subscriber).await {
         Ok(_) => HttpResponse::Ok().finish(),
