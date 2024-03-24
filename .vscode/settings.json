@@ -5,6 +5,8 @@
     "HRTB",
     "quickcheck",
     "sqlx",
-    "urlencoder"
-  ]
+    "urlencoder",
+    "wiremock"
+  ],
+  "rust-analyzer.showUnlinkedFileNotification": false
 }
