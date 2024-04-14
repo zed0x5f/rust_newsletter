@@ -1,5 +1,8 @@
-use reqwest::Client;
-use secrecy::Secret;
+use reqwest::{
+    header::{HeaderMap, HeaderValue},
+    Client, ClientBuilder,
+};
+use secrecy::{ExposeSecret, Secret};
 
 use crate::domain::SubscriberEmail;
 
@@ -16,8 +19,20 @@ impl EmailClient {
         sender: SubscriberEmail,
         authorization_token: Secret<String>,
     ) -> Self {
+        let mut headers = HeaderMap::new();
+        headers.append(
+            "X-Postmark-Server-Token",
+            authorization_token
+                .expose_secret()
+                .parse::<HeaderValue>()
+                .unwrap(),
+        );
         Self {
-            http_client: Client::new(),
+            http_client: ClientBuilder::new()
+                .default_headers(headers)
+                .build()
+                .unwrap(),
+            // .expect("Client Failed to build"),
             base_url,
             sender,
             authorization_token,
@@ -39,7 +54,14 @@ impl EmailClient {
             html_body: html_content.to_owned(),
             text_body: text_content.to_owned(),
         };
-        let _builder = self.http_client.post(&url).json(&request_body);
+        let _builder = self
+            .http_client
+            .post(&url)
+            .header(
+                "X-Postmark-Server-Token",
+                self.authorization_token.expose_secret(),
+            )
+            .json(&request_body);
         Ok(())
     }
 }
