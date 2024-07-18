@@ -3,9 +3,11 @@
     "actix",
     "chrono",
     "HRTB",
+    "openapi",
     "quickcheck",
     "sqlx",
     "urlencoder",
+    "utoipa",
     "wiremock"
   ],
   "rust-analyzer.showUnlinkedFileNotification": false

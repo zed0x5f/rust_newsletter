@@ -26,6 +26,7 @@ tracing-actix-web = "0.7"
 unicode-segmentation = "1"
 validator = "^0.18"
 utoipa = { version = "4", features = ["actix_extras"] }
+utoipa-swagger-ui = { version = "6.0.0", features = ["actix-web"] }
 
 [dependencies.reqwest]
 version = "^0.12.0"
