@@ -5,7 +5,7 @@ pub struct SubscriberEmail(String);
 
 impl SubscriberEmail {
     pub fn parse(s: String) -> Result<Self, String> {
-        match validate_email(&s) {
+        match &s.validate_email() {
             true => Ok(Self(s)),
             false => Err(format!("{} is not a valid subscriber email.", s)),
         }
@@ -24,14 +24,14 @@ mod tests {
     use claims::assert_err;
     use fake::faker::internet::en::SafeEmail;
     use fake::Fake;
-    use quickcheck::Gen;
+    use quickcheck::{Gen, RngCore};
 
     #[derive(Debug, Clone)]
     struct ValidEmailFixture(String);
 
     impl quickcheck::Arbitrary for ValidEmailFixture {
-        fn arbitrary(g: &mut Gen) -> Self {
-            let email = SafeEmail().fake_with_rng();
+        fn arbitrary<G: RngCore>(g: &mut G) -> Self {
+            let email = SafeEmail().fake_with_rng(g);
             Self(email)
         }
     }
